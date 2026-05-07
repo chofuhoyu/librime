@@ -76,15 +76,18 @@ class UserDictionary : public Class<UserDictionary, const Ticket&> {
   bool RevertRecentTransaction();
   bool CommitPendingTransaction();
 
+  void set_static_weights(bool value) { static_weights_ = value; }
+  bool static_weights() const { return static_weights_; }
+
   const string& name() const { return name_; }
   TickCount tick() const { return tick_; }
 
-  static an<DictEntry> CreateDictEntry(const string& key,
-                                       const string& value,
-                                       TickCount present_tick,
-                                       double credibility = 0.0,
-                                       double quality_len = 0.0,
-                                       string* full_code = nullptr);
+  an<DictEntry> CreateDictEntry(const string& key,
+                                const string& value,
+                                TickCount present_tick,
+                                double credibility = 0.0,
+                                double quality_len = 0.0,
+                                string* full_code = nullptr);
 
  protected:
   bool Initialize();
@@ -104,6 +107,7 @@ class UserDictionary : public Class<UserDictionary, const Ticket&> {
   hash_map<SyllableId, string> rev_syllabary_;
   TickCount tick_ = 0;
   time_t transaction_time_ = 0;
+  bool static_weights_ = false;
 };
 
 class UserDictionaryComponent : public UserDictionary::Component {

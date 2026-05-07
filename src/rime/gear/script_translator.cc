@@ -202,6 +202,8 @@ ScriptTranslator::ScriptTranslator(const Ticket& ticket)
       corrector_.reset(corrector->Create(ticket));
     }
   }
+  if (user_dict_)
+    user_dict_->set_static_weights(static_user_dict_weights_);
 }
 
 an<Translation> ScriptTranslator::Query(const string& input,

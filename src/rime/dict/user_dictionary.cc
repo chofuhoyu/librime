@@ -25,6 +25,7 @@
 namespace rime {
 
 struct DfsState {
+  UserDictionary* user_dict;
   size_t depth_limit;
   size_t predict_word_from_depth;
   TickCount present_tick;
@@ -73,7 +74,7 @@ struct DfsState {
 void DfsState::RecruitEntry(size_t pos,
                             hash_map<string, SyllableId>* syllabary) {
   string full_code;
-  auto e = UserDictionary::CreateDictEntry(
+  auto e = user_dict->CreateDictEntry(
       key, value, present_tick, credibility.back(), quality_len.back(),
       syllabary ? &full_code : nullptr);
   if (e) {
@@ -321,6 +322,7 @@ an<UserDictEntryCollector> UserDictionary::Lookup(
       start_pos >= syll_graph.interpreted_length)
     return nullptr;
   DfsState state;
+  state.user_dict = this;
   state.depth_limit = depth_limit;
   state.predict_word_from_depth = predict_word_from_depth;
   FetchTickCount();
@@ -392,7 +394,7 @@ size_t UserDictionary::LookupWords(UserDictEntryIterator* result,
       break;
     }
     last_key = key;
-    auto e = CreateDictEntry(key, value, present_tick, 1.0, len, &full_code);
+    auto e = this->CreateDictEntry(key, value, present_tick, 1.0, len, &full_code);
     if (!e)
       continue;
     e->custom_code = full_code;
@@ -438,6 +440,23 @@ bool UserDictionary::UpdateEntry(const DictEntry& entry,
     }
   } else if (!new_entry_prefix.empty()) {
     key.insert(0, new_entry_prefix);
+  }
+  if (static_weights_) {
+    if (commits < 0) {  // still allow deletion in static mode
+      v.commits = (std::min)(-1, -v.commits);
+      v.dee = 0;
+      v.tick = 0;
+      return db_->Update(key, v.Pack());
+    }
+    if (commits > 0 && v.commits == 0) {
+      // new entry: create with static weight (no dynamic frequency)
+      v.commits = 1;
+      v.dee = 0;
+      v.tick = 0;
+      return db_->Update(key, v.Pack());
+    }
+    // existing entry or zero-commit: skip, no frequency update
+    return true;
   }
   if (commits > 0) {
     if (v.commits < 0)
@@ -544,16 +563,19 @@ an<DictEntry> UserDictionary::CreateDictEntry(const string& key,
     return e;
   if (v.commits < 0)  // deleted entry
     return e;
-  if (v.tick < present_tick)
-    v.dee = algo::formula_d(0, (double)present_tick, v.dee, (double)v.tick);
   // create!
   e = New<DictEntry>();
   e->text = key.substr(separator_pos + 1);
   e->commit_count = v.commits;
-  // TODO: argument s not defined...
-  double weight = algo::formula_p(0, (double)v.commits / present_tick,
-                                  (double)present_tick, v.dee);
-  e->weight = log(weight > 0 ? weight : DBL_EPSILON) + credibility;
+  if (static_weights_) {
+    e->weight = credibility;
+  } else {
+    if (v.tick < present_tick)
+      v.dee = algo::formula_d(0, (double)present_tick, v.dee, (double)v.tick);
+    double weight = algo::formula_p(0, (double)v.commits / present_tick,
+                                    (double)present_tick, v.dee);
+    e->weight = log(weight > 0 ? weight : DBL_EPSILON) + credibility;
+  }
   e->quality_len = quality_len;
   if (full_code) {
     *full_code = key.substr(0, separator_pos);
@@ -562,7 +584,8 @@ an<DictEntry> UserDictionary::CreateDictEntry(const string& key,
              << ", weight = " << e->weight
              << ", quality_len = " << e->quality_len
              << ", commit_count = " << e->commit_count
-             << ", present_tick = " << present_tick;
+             << ", present_tick = " << present_tick
+             << ", static_weights = " << static_weights_;
   return e;
 }
 

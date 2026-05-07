@@ -232,6 +232,8 @@ TableTranslator::TableTranslator(const Ticket& ticket)
     encoder_.reset(new UnityTableEncoder(user_dict_.get()));
     encoder_->Load(ticket);
   }
+  if (user_dict_)
+    user_dict_->set_static_weights(static_user_dict_weights_);
 }
 
 static bool starts_with_completion(an<Translation> translation) {

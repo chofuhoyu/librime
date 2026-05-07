@@ -129,6 +129,8 @@ TranslatorOptions::TranslatorOptions(const Ticket& ticket) {
     max_sentences_ = std::min(std::max(1, max_sentences_), 100);
     config->GetDouble(ticket.name_space + "/sentence_cutoff_threshold",
                       &sentence_cutoff_threshold_);
+    config->GetBool(ticket.name_space + "/static_user_dict_weights",
+                    &static_user_dict_weights_);
 
     preedit_formatter_.Load(
         config->GetList(ticket.name_space + "/preedit_format"));
