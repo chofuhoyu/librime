@@ -24,6 +24,8 @@
 
 namespace rime {
 
+static const double kPinWeight = 200.0;
+
 struct DfsState {
   UserDictionary* user_dict;
   size_t depth_limit;
@@ -420,13 +422,14 @@ size_t UserDictionary::LookupWords(UserDictEntryIterator* result,
   return count;
 }
 
-bool UserDictionary::UpdateEntry(const DictEntry& entry, int commits) {
-  return UpdateEntry(entry, commits, "");
+bool UserDictionary::UpdateEntry(const DictEntry& entry, int commits, bool pin) {
+  return UpdateEntry(entry, commits, "", pin);
 }
 
 bool UserDictionary::UpdateEntry(const DictEntry& entry,
                                  int commits,
-                                 const string& new_entry_prefix) {
+                                 const string& new_entry_prefix,
+                                 bool pin) {
   string code_str(entry.custom_code);
   if (code_str.empty() && !TranslateCodeToString(entry.code, &code_str))
     return false;
@@ -445,6 +448,13 @@ bool UserDictionary::UpdateEntry(const DictEntry& entry,
     if (commits < 0) {  // still allow deletion in static mode
       v.commits = (std::min)(-1, -v.commits);
       v.dee = 0;
+      v.tick = 0;
+      return db_->Update(key, v.Pack());
+    }
+    if (pin) {
+      // pin: write entry with fixed high weight, bypass static_weights_ guard
+      v.commits = 1;
+      v.dee = kPinWeight;
       v.tick = 0;
       return db_->Update(key, v.Pack());
     }
@@ -568,7 +578,7 @@ an<DictEntry> UserDictionary::CreateDictEntry(const string& key,
   e->text = key.substr(separator_pos + 1);
   e->commit_count = v.commits;
   if (static_weights_) {
-    e->weight = credibility;
+    e->weight = (v.dee == kPinWeight) ? kPinWeight : credibility;
   } else {
     if (v.tick < present_tick)
       v.dee = algo::formula_d(0, (double)present_tick, v.dee, (double)v.tick);

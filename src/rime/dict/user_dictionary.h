@@ -66,10 +66,11 @@ class UserDictionary : public Class<UserDictionary, const Ticket&> {
                      bool predictive,
                      size_t limit = 0,
                      string* resume_key = NULL);
-  bool UpdateEntry(const DictEntry& entry, int commits);
+  bool UpdateEntry(const DictEntry& entry, int commits, bool pin = false);
   bool UpdateEntry(const DictEntry& entry,
                    int commits,
-                   const string& new_entry_prefix);
+                   const string& new_entry_prefix,
+                   bool pin = false);
   bool UpdateTickCount(TickCount increment);
 
   bool NewTransaction();
