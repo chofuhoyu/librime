@@ -31,9 +31,8 @@ else # for Linux
 prefix ?= $(DESTDIR)/usr
 endif
 
-ifndef NOPARALLEL
-export MAKEFLAGS+=" -j$$(( $$(nproc 2>/dev/null || getconf _NPROCESSORS_ONLN 2>/dev/null || getconf NPROCESSORS_ONLN 2>/dev/null || echo 8) + 1)) "
-endif
+# NOPARALLEL: 并行度由命令行 make -j$(nproc) 控制
+# MAKEFLAGS 由 make 的 C 代码直接解析，不经 shell，无法嵌入 $((...)) 表达式
 
 debug install-debug uninstall-debug test-debug: build ?= debug
 build ?= build
