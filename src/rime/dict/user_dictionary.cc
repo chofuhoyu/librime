@@ -452,9 +452,9 @@ bool UserDictionary::UpdateEntry(const DictEntry& entry,
       return db_->Update(key, v.Pack());
     }
     if (pin) {
-      // pin: write entry with fixed high weight, bypass static_weights_ guard
+      // pin: write entry with high weight, re-pinning increments weight
       v.commits = 1;
-      v.dee = kPinWeight;
+      v.dee = (v.dee >= kPinWeight) ? v.dee + 1.0 : kPinWeight;
       v.tick = 0;
       return db_->Update(key, v.Pack());
     }
