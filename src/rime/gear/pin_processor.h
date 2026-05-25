@@ -11,10 +11,15 @@
 
 namespace rime {
 
+class UserDictionary;
+
 class PinProcessor : public Processor {
  public:
   explicit PinProcessor(const Ticket& ticket);
   ProcessResult ProcessKeyEvent(const KeyEvent& key_event) override;
+
+ private:
+  the<UserDictionary> user_dict_;
 };
 
 }  // namespace rime

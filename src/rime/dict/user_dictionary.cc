@@ -453,6 +453,8 @@ bool UserDictionary::UpdateEntry(const DictEntry& entry,
     }
     if (pin) {
       // pin: write entry with high weight, re-pinning increments weight
+      LOG(INFO) << "pin-v0.0.5 detail: key=" << key << " old_dee=" << v.dee
+                << " new_dee=" << (v.dee >= kPinWeight ? v.dee + 1.0 : kPinWeight);
       v.commits = 1;
       v.dee = (v.dee >= kPinWeight) ? v.dee + 1.0 : kPinWeight;
       v.tick = 0;
@@ -578,7 +580,11 @@ an<DictEntry> UserDictionary::CreateDictEntry(const string& key,
   e->text = key.substr(separator_pos + 1);
   e->commit_count = v.commits;
   if (static_weights_) {
-    e->weight = (v.dee == kPinWeight) ? kPinWeight : credibility;
+    e->weight = (v.dee >= kPinWeight) ? v.dee : credibility;
+    if (v.dee >= kPinWeight) {
+      LOG(INFO) << "pin-v0.0.5 read: key=" << key << " dee=" << v.dee
+                << " weight=" << e->weight;
+    }
   } else {
     if (v.tick < present_tick)
       v.dee = algo::formula_d(0, (double)present_tick, v.dee, (double)v.tick);

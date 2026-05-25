@@ -4,7 +4,6 @@
 //
 
 #include <rime/candidate.h>
-#include <rime/common.h>
 #include <rime/composition.h>
 #include <rime/config.h>
 #include <rime/context.h>
@@ -19,7 +18,26 @@
 
 namespace rime {
 
-PinProcessor::PinProcessor(const Ticket& ticket) : Processor(ticket) {}
+static const char kPinTag[] = "pin-v0.0.6";
+
+PinProcessor::PinProcessor(const Ticket& ticket) : Processor(ticket) {
+  Config* config = ticket.schema->config();
+  string dict_name;
+  config->GetString("translator/dictionary", &dict_name);
+  string db_class = "userdb";
+  config->GetString("translator/db_class", &db_class);
+
+  auto comp = UserDictionary::Require("user_dictionary");
+  if (comp) {
+    auto udc = static_cast<UserDictionaryComponent*>(comp);
+    user_dict_.reset(udc->Create(dict_name, db_class));
+    if (user_dict_) {
+      user_dict_->Load();
+      user_dict_->set_static_weights(true);
+    }
+  }
+  LOG(INFO) << kPinTag << " created, user_dict=" << (user_dict_ ? "ok" : "null");
+}
 
 ProcessResult PinProcessor::ProcessKeyEvent(const KeyEvent& key_event) {
   int ch = key_event.keycode();
@@ -28,47 +46,45 @@ ProcessResult PinProcessor::ProcessKeyEvent(const KeyEvent& key_event) {
   int index = ch - '1';
 
   Context* ctx = engine_->context();
-  if (!ctx || !ctx->HasMenu())
+  if (!ctx || !ctx->HasMenu()) {
+    LOG(INFO) << kPinTag << " no context or no menu";
     return kNoop;
+  }
+  if (!user_dict_) {
+    LOG(INFO) << kPinTag << " user_dict_ is null";
+    return kNoop;
+  }
 
   Segment& seg = ctx->composition().back();
-  if (!seg.menu || seg.menu->Prepare(index + 1) <= index)
+  if (!seg.menu || seg.menu->Prepare(index + 1) <= index) {
+    LOG(INFO) << kPinTag << " no menu or can't prepare index " << index;
     return kNoop;
+  }
 
   auto cand = seg.menu->GetCandidateAt(index);
-  if (!cand)
+  if (!cand) {
+    LOG(INFO) << kPinTag << " no candidate at index " << index;
     return kNoop;
+  }
   auto phrase = As<Phrase>(Candidate::GetGenuineCandidate(cand));
-  if (!phrase)
+  if (!phrase) {
+    LOG(INFO) << kPinTag << " candidate is not a phrase";
     return kNoop;
+  }
 
-  // 获取编码
   string code_str = phrase->entry().custom_code;
   if (code_str.empty())
     code_str = ctx->input().substr(seg.start, seg.end - seg.start);
-  if (code_str.empty())
+  if (code_str.empty()) {
+    LOG(INFO) << kPinTag << " empty code_str";
     return kNoop;
-
-  // 从 schema 读取用户词典名和类型
-  Config* config = engine_->schema()->config();
-  string dict_name;
-  config->GetString("translator/dictionary", &dict_name);
-  string db_class = "userdb";
-  config->GetString("translator/db_class", &db_class);
-
-  auto comp = UserDictionary::Require("user_dictionary");
-  if (!comp)
-    return kNoop;
-  auto udc = static_cast<UserDictionaryComponent*>(comp);
-  the<UserDictionary> user_dict(udc->Create(dict_name, db_class));
-  if (!user_dict)
-    return kNoop;
-  user_dict->Load();
+  }
 
   DictEntry e;
   e.text = phrase->text();
-  e.custom_code = code_str;
-  user_dict->UpdateEntry(e, 1, "", /*pin=*/true);
+  e.custom_code = code_str + " ";
+  LOG(INFO) << kPinTag << " pinning text=" << e.text << " code=" << code_str;
+  user_dict_->UpdateEntry(e, 1, "", /*pin=*/true);
 
   ctx->RefreshNonConfirmedComposition();
   return kAccepted;
