@@ -19,6 +19,8 @@
 #include <rime/gear/key_binder.h>
 #include <rime/gear/matcher.h>
 #include <rime/gear/navigator.h>
+#include <rime/gear/pin_filter.h>
+#include <rime/gear/pin_processor.h>
 #include <rime/gear/punctuator.h>
 #include <rime/gear/recognizer.h>
 #include <rime/gear/reverse_lookup_filter.h>
@@ -50,6 +52,7 @@ static void rime_gears_initialize() {
   r.Register("fluency_editor", new Component<FluidEditor>);  // alias
   r.Register("key_binder", new Component<KeyBinder>);
   r.Register("navigator", new Component<Navigator>);
+  r.Register("pin_processor", new Component<PinProcessor>);
   r.Register("punctuator", new Component<Punctuator>);
   r.Register("recognizer", new Component<Recognizer>);
   r.Register("selector", new Component<Selector>);
@@ -77,6 +80,7 @@ static void rime_gears_initialize() {
   r.Register("history_translator", new Component<HistoryTranslator>);
 
   // filters
+  r.Register("pin_filter", new Component<PinFilter>);
   r.Register("simplifier", new SimplifierComponent);
   r.Register("uniquifier", new Component<Uniquifier>);
   if (!r.Find("charset_filter")) {  // allow improved implementation
