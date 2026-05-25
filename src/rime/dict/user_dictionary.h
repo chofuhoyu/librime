@@ -106,7 +106,7 @@ class UserDictionary : public Class<UserDictionary, const Ticket&> {
   an<Prism> prism_;
   hash_map<string, SyllableId> syllabary_;
   hash_map<SyllableId, string> rev_syllabary_;
-  TickCount tick_ = 0;
+  TickCount tick_ = 0;  // pin ordering key when static_weights_ is true
   time_t transaction_time_ = 0;
   bool static_weights_ = false;
 };

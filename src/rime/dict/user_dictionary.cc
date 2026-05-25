@@ -452,12 +452,15 @@ bool UserDictionary::UpdateEntry(const DictEntry& entry,
       return db_->Update(key, v.Pack());
     }
     if (pin) {
-      // pin: write entry with high weight, re-pinning increments weight
-      LOG(INFO) << "pin-v0.0.5 detail: key=" << key << " old_dee=" << v.dee
-                << " new_dee=" << (v.dee >= kPinWeight ? v.dee + 1.0 : kPinWeight);
+      // pin: mark as pinned (dee >= kPinWeight), use tick as monotonic ordering key.
+      // tick is incremented globally so each pin gets a strictly higher value,
+      // guaranteeing most-recently-pinned is always first regardless of history.
+      LOG(INFO) << "pin-v0.1.0 detail: key=" << key << " old_dee=" << v.dee
+                << " tick=" << tick_;
       v.commits = 1;
-      v.dee = (v.dee >= kPinWeight) ? v.dee + 1.0 : kPinWeight;
-      v.tick = 0;
+      v.dee = kPinWeight;       // mark as pinned
+      UpdateTickCount(1);       // global tick increments
+      v.tick = tick_;           // store pin order (1, 2, 3, ...)
       return db_->Update(key, v.Pack());
     }
     if (commits > 0 && v.commits == 0) {
@@ -580,10 +583,13 @@ an<DictEntry> UserDictionary::CreateDictEntry(const string& key,
   e->text = key.substr(separator_pos + 1);
   e->commit_count = v.commits;
   if (static_weights_) {
-    e->weight = (v.dee >= kPinWeight) ? v.dee : credibility;
+    // pinned entries: dee >= kPinWeight marks pin status, v.tick provides
+    // monotonic ordering (most recent pin = highest weight).
+    // v.tick / 1e6 maps ~21 billion pins into [0, 2100], safe for exp().
+    e->weight = (v.dee >= kPinWeight) ? kPinWeight + (double)v.tick / 1e6 : credibility;
     if (v.dee >= kPinWeight) {
-      LOG(INFO) << "pin-v0.0.5 read: key=" << key << " dee=" << v.dee
-                << " weight=" << e->weight;
+      LOG(INFO) << "pin-v0.1.0 read: key=" << key << " dee=" << v.dee
+                << " tick=" << v.tick << " weight=" << e->weight;
     }
   } else {
     if (v.tick < present_tick)
