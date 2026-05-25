@@ -10,9 +10,10 @@
 #include <rime/context.h>
 #include <rime/engine.h>
 #include <rime/key_event.h>
+#include <rime/menu.h>
 #include <rime/schema.h>
-#include <rime/dict/dict_entry.h>
 #include <rime/dict/user_dictionary.h>
+#include <rime/dict/vocabulary.h>
 #include <rime/gear/pin_processor.h>
 #include <rime/gear/translator_commons.h>
 
@@ -58,7 +59,8 @@ ProcessResult PinProcessor::ProcessKeyEvent(const KeyEvent& key_event) {
   auto comp = UserDictionary::Require("user_dictionary");
   if (!comp)
     return kNoop;
-  the<UserDictionary> user_dict(comp->Create(dict_name, db_class));
+  auto udc = static_cast<UserDictionaryComponent*>(comp);
+  the<UserDictionary> user_dict(udc->Create(dict_name, db_class));
   if (!user_dict)
     return kNoop;
   user_dict->Load();
