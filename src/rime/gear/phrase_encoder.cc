@@ -254,7 +254,9 @@ void PhraseEncoder::RefreshPreview() {
     char_count += static_cast<int>(SplitToChars(text).size());
   engine_->context()->set_input(
       "造词(" + std::to_string(char_count) + "字): " + phrase + "\xe2\x86\x92" + code);
-  // \xe2\x86\x92 = UTF-8 "→"
+  // set_input 触发了 segmentor，产生了与编码对应的重码候选
+  // 清除该候选
+  engine_->context()->composition().clear();
 }
 
 ProcessResult PhraseEncoder::ProcessKeyEvent(const KeyEvent& key_event) {
