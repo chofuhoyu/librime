@@ -146,6 +146,30 @@ bool PhraseEncoder::ApplyFormula(const vector<string>& codes,
   return !result->empty();
 }
 
+// Split a UTF-8 string into individual characters
+static vector<string> SplitToChars(const string& text) {
+  vector<string> chars;
+  const char* p = text.data();
+  const char* end = p + text.size();
+  while (p < end) {
+    size_t len = 1;
+    unsigned char c = static_cast<unsigned char>(*p);
+    if (c >= 0xFC)
+      len = 6;
+    else if (c >= 0xF8)
+      len = 5;
+    else if (c >= 0xF0)
+      len = 4;
+    else if (c >= 0xE0)
+      len = 3;
+    else if (c >= 0xC0)
+      len = 2;
+    chars.push_back(string(p, len));
+    p += len;
+  }
+  return chars;
+}
+
 bool PhraseEncoder::EncodePhrase(const vector<string>& texts,
                                   string* code,
                                   string* phrase) {
@@ -153,27 +177,30 @@ bool PhraseEncoder::EncodePhrase(const vector<string>& texts,
   if (texts.empty())
     return false;
 
-  // Reverse-lookup each text
+  // Split each text into individual UTF-8 characters, then reverse-lookup
   vector<vector<string>> all_codes;
   for (auto& text : texts) {
-    string str_list;
-    if (!rev_dict_->LookupStems(text, &str_list))
-      rev_dict_->ReverseLookup(text, &str_list);
-    if (str_list.empty()) {
-      LOG(INFO) << "phrase_encoder: no code found for '" << text << "'";
-      return false;
+    auto chars = SplitToChars(text);
+    for (auto& ch : chars) {
+      string str_list;
+      if (!rev_dict_->LookupStems(ch, &str_list))
+        rev_dict_->ReverseLookup(ch, &str_list);
+      if (str_list.empty()) {
+        LOG(INFO) << "phrase_encoder: no code found for '" << ch << "'";
+        return false;
+      }
+      vector<string> codes;
+      boost::split(codes, str_list, boost::is_any_of(" "));
+      all_codes.push_back(codes);
     }
-    vector<string> codes;
-    boost::split(codes, str_list, boost::is_any_of(" "));
-    all_codes.push_back(codes);
   }
 
   // Find matching rule and apply
-  int n = static_cast<int>(texts.size());
+  int n = static_cast<int>(all_codes.size());  // # of chars, not # of texts
   for (auto& rule : encoding_rules_) {
     if (n < rule.min_word_length || n > rule.max_word_length)
       continue;
-    // Try first code for each text
+    // Try first code for each character
     vector<string> attempt;
     for (auto& codes : all_codes)
       attempt.push_back(codes[0]);
@@ -213,11 +240,15 @@ void PhraseEncoder::RefreshPreview() {
   string code, phrase;
   if (!EncodePhrase(texts, &code, &phrase)) {
     engine_->context()->set_input(
-        "造词(" + std::to_string(phrase_length_) + "字): 编码失败");
+        "造词: 编码失败");
     return;
   }
+  // Count actual characters after splitting
+  int char_count = 0;
+  for (auto& text : texts)
+    char_count += static_cast<int>(SplitToChars(text).size());
   engine_->context()->set_input(
-      "造词(" + std::to_string(phrase_length_) + "字): " + phrase + "\xe2\x86\x92" + code);
+      "造词(" + std::to_string(char_count) + "字): " + phrase + "\xe2\x86\x92" + code);
   // \xe2\x86\x92 = UTF-8 "→"
 }
 
