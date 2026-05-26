@@ -230,13 +230,18 @@ bool PhraseEncoder::CommitPhrase() {
   return true;
 }
 
+static int CountAvailableRecords(Context* ctx) {
+  int count = 0;
+  const auto& history = ctx->commit_history();
+  for (auto it = history.rbegin(); it != history.rend(); ++it) {
+    if (it->type != "thru")
+      ++count;
+  }
+  return count;
+}
+
 void PhraseEncoder::RefreshPreview() {
   auto texts = GetLastNTexts(phrase_length_);
-  if (static_cast<int>(texts.size()) < phrase_length_) {
-    engine_->context()->set_input(
-        "造词(" + std::to_string(phrase_length_) + "字): 历史记录不足");
-    return;
-  }
   string code, phrase;
   if (!EncodePhrase(texts, &code, &phrase)) {
     engine_->context()->set_input(
@@ -258,6 +263,9 @@ ProcessResult PhraseEncoder::ProcessKeyEvent(const KeyEvent& key_event) {
       if (key_event == hotkey) {
         active_ = true;
         phrase_length_ = 2;
+        int available = CountAvailableRecords(engine_->context());
+        if (phrase_length_ > available)
+          phrase_length_ = available;
         RefreshPreview();
         return kAccepted;
       }
@@ -267,16 +275,17 @@ ProcessResult PhraseEncoder::ProcessKeyEvent(const KeyEvent& key_event) {
 
   // Active mode: handle navigation and action keys
   int ch = key_event.keycode();
+  int available = CountAvailableRecords(engine_->context());
   if (ch == XK_Left) {
-    if (phrase_length_ > 2) {
-      --phrase_length_;
+    if (phrase_length_ < available) {
+      ++phrase_length_;
       RefreshPreview();
     }
     return kAccepted;
   }
   if (ch == XK_Right) {
-    if (phrase_length_ < 10) {
-      ++phrase_length_;
+    if (phrase_length_ > 2) {
+      --phrase_length_;
       RefreshPreview();
     }
     return kAccepted;
