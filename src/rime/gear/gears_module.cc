@@ -19,6 +19,7 @@
 #include <rime/gear/key_binder.h>
 #include <rime/gear/matcher.h>
 #include <rime/gear/navigator.h>
+#include <rime/gear/phrase_encoder.h>
 #include <rime/gear/pin_filter.h>
 #include <rime/gear/pin_processor.h>
 #include <rime/gear/punctuator.h>
@@ -52,6 +53,7 @@ static void rime_gears_initialize() {
   r.Register("fluency_editor", new Component<FluidEditor>);  // alias
   r.Register("key_binder", new Component<KeyBinder>);
   r.Register("navigator", new Component<Navigator>);
+  r.Register("phrase_encoder", new Component<PhraseEncoder>);
   r.Register("pin_processor", new Component<PinProcessor>);
   r.Register("punctuator", new Component<Punctuator>);
   r.Register("recognizer", new Component<Recognizer>);
