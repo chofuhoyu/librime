@@ -82,6 +82,8 @@ ProcessResult PinProcessor::ProcessKeyEvent(const KeyEvent& key_event) {
 
   DictEntry e;
   e.text = phrase->text();
+  while (!code_str.empty() && code_str.back() == ' ')
+    code_str.pop_back();
   e.custom_code = code_str + " ";
   LOG(INFO) << kPinTag << " pinning text=" << e.text << " code=" << code_str;
   user_dict_->UpdateEntry(e, 1, "", /*pin=*/true);
