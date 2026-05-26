@@ -21,7 +21,7 @@ class PinFilterTranslation : public CacheTranslation {
     auto cand = Peek();
     if (cand) {
       const string& type = Candidate::GetGenuineCandidate(cand)->type();
-      LOG(INFO) << "pin-v0.0.5 filter: show '" << cand->text()
+      DLOG(INFO) << "pin-v0.1.1 filter: show '" << cand->text()
                 << "' type=" << type << " quality=" << cand->quality();
       if (type == "user_table") {
         seen_.insert(cand->text());
@@ -34,11 +34,11 @@ class PinFilterTranslation : public CacheTranslation {
       cand = Peek();
       const string& type = Candidate::GetGenuineCandidate(cand)->type();
       if (type == "table" && seen_.count(cand->text())) {
-        LOG(INFO) << "pin-v0.0.5 filter: skip '" << cand->text()
+        DLOG(INFO) << "pin-v0.1.1 filter: skip '" << cand->text()
                   << "' type=" << type << " (duplicate)";
         continue;
       }
-      LOG(INFO) << "pin-v0.0.5 filter: show '" << cand->text()
+      DLOG(INFO) << "pin-v0.1.1 filter: show '" << cand->text()
                 << "' type=" << type << " quality=" << cand->quality();
       if (type == "user_table") {
         seen_.insert(cand->text());

@@ -457,7 +457,7 @@ bool UserDictionary::UpdateEntry(const DictEntry& entry,
       // pin: mark as pinned (dee >= kPinWeight), use tick as monotonic ordering key.
       // tick is incremented globally so each pin gets a strictly higher value,
       // guaranteeing most-recently-pinned is always first regardless of history.
-      LOG(INFO) << "pin-v0.1.0 detail: key=" << key << " old_dee=" << v.dee
+      LOG(INFO) << "pin-v0.1.1 detail: key=" << key << " old_dee=" << v.dee
                 << " tick=" << tick_;
       v.commits = 1;
       v.dee = kPinWeight;       // mark as pinned
@@ -601,7 +601,7 @@ an<DictEntry> UserDictionary::CreateDictEntry(const string& key,
     // v.tick / 1e6 maps ~21 billion pins into [0, 2100], safe for exp().
     e->weight = (v.dee >= kPinWeight) ? kPinWeight + (double)v.tick / 1e6 : credibility;
     if (v.dee >= kPinWeight) {
-      LOG(INFO) << "pin-v0.1.0 read: key=" << key << " dee=" << v.dee
+      DLOG(INFO) << "pin-v0.1.1 read: key=" << key << " dee=" << v.dee
                 << " tick=" << v.tick << " weight=" << e->weight;
     }
   } else {

@@ -18,7 +18,7 @@
 
 namespace rime {
 
-static const char kPinTag[] = "pin-v0.1.0";
+static const char kPinTag[] = "pin-v0.1.1";
 
 PinProcessor::PinProcessor(const Ticket& ticket) : Processor(ticket) {
   Config* config = ticket.schema->config();
