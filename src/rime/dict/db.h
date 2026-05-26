@@ -55,6 +55,7 @@ class Db : public Class<Db, const string&> {
   virtual bool Fetch(const string& key, string* value) = 0;
   virtual bool Update(const string& key, const string& value) = 0;
   virtual bool Erase(const string& key) = 0;
+  virtual bool Sync() { return true; }
 
   const string& name() const { return name_; }
   const path& file_path() const { return file_path_; }

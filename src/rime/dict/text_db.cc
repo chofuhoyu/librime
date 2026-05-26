@@ -230,4 +230,13 @@ bool TextDb::SaveToFile(const path& file) {
   return true;
 }
 
+bool TextDb::Sync() {
+  if (!loaded() || readonly())
+    return false;
+  if (modified_ && !SaveToFile(file_path()))
+    return false;
+  modified_ = false;
+  return true;
+}
+
 }  // namespace rime

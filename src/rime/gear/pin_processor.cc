@@ -34,6 +34,9 @@ PinProcessor::PinProcessor(const Ticket& ticket) : Processor(ticket) {
     if (user_dict_) {
       user_dict_->Load();
       user_dict_->set_static_weights(true);
+      bool text_userdb_sync = false;
+      config->GetBool("translator/text_userdb_sync", &text_userdb_sync);
+      user_dict_->set_text_userdb_sync(text_userdb_sync);
     }
   }
   LOG(INFO) << kPinTag << " created, user_dict=" << (user_dict_ ? "ok" : "null");

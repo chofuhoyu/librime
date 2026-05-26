@@ -79,6 +79,8 @@ class UserDictionary : public Class<UserDictionary, const Ticket&> {
 
   void set_static_weights(bool value) { static_weights_ = value; }
   bool static_weights() const { return static_weights_; }
+  void set_text_userdb_sync(bool value) { text_userdb_sync_ = value; }
+  bool text_userdb_sync() const { return text_userdb_sync_; }
 
   const string& name() const { return name_; }
   TickCount tick() const { return tick_; }
@@ -109,6 +111,7 @@ class UserDictionary : public Class<UserDictionary, const Ticket&> {
   TickCount tick_ = 0;  // pin ordering key when static_weights_ is true
   time_t transaction_time_ = 0;
   bool static_weights_ = false;
+  bool text_userdb_sync_ = false;
 };
 
 class UserDictionaryComponent : public UserDictionary::Component {

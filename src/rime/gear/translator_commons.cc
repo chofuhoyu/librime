@@ -131,6 +131,8 @@ TranslatorOptions::TranslatorOptions(const Ticket& ticket) {
                       &sentence_cutoff_threshold_);
     config->GetBool(ticket.name_space + "/static_user_dict_weights",
                     &static_user_dict_weights_);
+    config->GetBool(ticket.name_space + "/text_userdb_sync",
+                    &text_userdb_sync_);
 
     preedit_formatter_.Load(
         config->GetList(ticket.name_space + "/preedit_format"));

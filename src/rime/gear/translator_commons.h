@@ -180,6 +180,7 @@ class TranslatorOptions {
   int max_sentences_ = 1;
   double sentence_cutoff_threshold_ = 0.1;
   bool static_user_dict_weights_ = false;
+  bool text_userdb_sync_ = false;
   Projection preedit_formatter_;
   Projection comment_formatter_;
   Patterns user_dict_disabling_patterns_;

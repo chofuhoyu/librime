@@ -62,6 +62,7 @@ class TextDb : public Db {
   RIME_DLL bool Fetch(const string& key, string* value) override;
   RIME_DLL bool Update(const string& key, const string& value) override;
   RIME_DLL bool Erase(const string& key) override;
+  RIME_DLL bool Sync() override;
 
  protected:
   void Clear();

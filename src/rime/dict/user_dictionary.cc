@@ -449,7 +449,9 @@ bool UserDictionary::UpdateEntry(const DictEntry& entry,
       v.commits = (std::min)(-1, -v.commits);
       v.dee = 0;
       v.tick = 0;
-      return db_->Update(key, v.Pack());
+      bool ret = db_->Update(key, v.Pack());
+      if (ret && text_userdb_sync_) db_->Sync();
+      return ret;
     }
     if (pin) {
       // pin: mark as pinned (dee >= kPinWeight), use tick as monotonic ordering key.
@@ -461,14 +463,18 @@ bool UserDictionary::UpdateEntry(const DictEntry& entry,
       v.dee = kPinWeight;       // mark as pinned
       UpdateTickCount(1);       // global tick increments
       v.tick = tick_;           // store pin order (1, 2, 3, ...)
-      return db_->Update(key, v.Pack());
+      bool ret = db_->Update(key, v.Pack());
+      if (ret && text_userdb_sync_) db_->Sync();
+      return ret;
     }
     if (commits > 0 && v.commits == 0) {
       // new entry: create with static weight (no dynamic frequency)
       v.commits = 1;
       v.dee = 0;
       v.tick = 0;
-      return db_->Update(key, v.Pack());
+      bool ret = db_->Update(key, v.Pack());
+      if (ret && text_userdb_sync_) db_->Sync();
+      return ret;
     }
     // existing entry or zero-commit: skip, no frequency update
     return true;
@@ -487,7 +493,9 @@ bool UserDictionary::UpdateEntry(const DictEntry& entry,
     v.dee = algo::formula_d(0.0, (double)tick_, v.dee, (double)v.tick);
   }
   v.tick = tick_;
-  return db_->Update(key, v.Pack());
+  bool ret = db_->Update(key, v.Pack());
+  if (ret && text_userdb_sync_) db_->Sync();
+  return ret;
 }
 
 bool UserDictionary::UpdateTickCount(TickCount increment) {
