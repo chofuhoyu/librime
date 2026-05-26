@@ -33,6 +33,8 @@ class PhraseEncoder : public Processor {
 
   bool active_ = false;
   int phrase_length_ = 2;
+  string pending_code_;   // pre-committed code for Esc undo
+  string pending_phrase_;  // pre-committed phrase text for Esc undo
   vector<KeyEvent> hotkeys_;
   the<UserDictionary> user_dict_;
   an<ReverseLookupDictionary> rev_dict_;

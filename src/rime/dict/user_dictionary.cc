@@ -493,6 +493,14 @@ bool UserDictionary::UpdateEntry(const DictEntry& entry,
   return ret;
 }
 
+bool UserDictionary::EraseEntry(const DictEntry& entry) {
+  string code_str(entry.custom_code);
+  if (code_str.empty() && !TranslateCodeToString(entry.code, &code_str))
+    return false;
+  string key(code_str + '\t' + entry.text);
+  return db_->Erase(key);
+}
+
 bool UserDictionary::UpdateTickCount(TickCount increment) {
   tick_ += increment;
   try {

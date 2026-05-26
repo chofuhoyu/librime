@@ -71,6 +71,7 @@ class UserDictionary : public Class<UserDictionary, const Ticket&> {
                    int commits,
                    const string& new_entry_prefix,
                    bool pin = false);
+  bool EraseEntry(const DictEntry& entry);
   bool UpdateTickCount(TickCount increment);
 
   bool NewTransaction();

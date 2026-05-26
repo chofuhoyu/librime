@@ -214,19 +214,13 @@ bool PhraseEncoder::EncodePhrase(const vector<string>& texts,
 }
 
 bool PhraseEncoder::CommitPhrase() {
-  auto texts = GetLastNTexts(phrase_length_);
-  if (static_cast<int>(texts.size()) < phrase_length_)
+  if (pending_code_.empty())
     return false;
-
-  string code, phrase;
-  if (!EncodePhrase(texts, &code, &phrase))
-    return false;
-
-  DictEntry e;
-  e.text = phrase;
-  e.custom_code = code + " ";
-  user_dict_->UpdateEntry(e, 1, "", /*pin=*/true);
-  LOG(INFO) << "phrase_encoder: created phrase '" << phrase << "' -> " << code;
+  // Already pre-committed in RefreshPreview, just finalize
+  LOG(INFO) << "phrase_encoder: confirmed phrase '" << pending_phrase_
+            << "' -> " << pending_code_;
+  pending_code_.clear();
+  pending_phrase_.clear();
   return true;
 }
 
@@ -241,22 +235,32 @@ static int CountAvailableRecords(Context* ctx) {
 }
 
 void PhraseEncoder::RefreshPreview() {
+  // Undo previous pre-commit
+  if (!pending_code_.empty()) {
+    DictEntry old;
+    old.text = pending_phrase_;
+    old.custom_code = pending_code_ + " ";
+    user_dict_->EraseEntry(old);
+    pending_code_.clear();
+    pending_phrase_.clear();
+  }
+
   auto texts = GetLastNTexts(phrase_length_);
   string code, phrase;
   if (!EncodePhrase(texts, &code, &phrase)) {
-    engine_->context()->set_input(
-        "造词: 编码失败");
+    engine_->context()->set_input("");
     return;
   }
-  // Count actual characters after splitting
-  int char_count = 0;
-  for (auto& text : texts)
-    char_count += static_cast<int>(SplitToChars(text).size());
-  engine_->context()->set_input(
-      "造词(" + std::to_string(char_count) + "字): " + phrase + "\xe2\x86\x92" + code);
-  // set_input 触发了 segmentor，产生了与编码对应的重码候选
-  // 清除该候选
-  engine_->context()->composition().clear();
+
+  // Pre-commit to user dict so pipeline shows it as first candidate (d=200)
+  DictEntry e;
+  e.text = phrase;
+  e.custom_code = code + " ";
+  user_dict_->UpdateEntry(e, 1, "", /*pin=*/true);
+  pending_code_ = code;
+  pending_phrase_ = phrase;
+
+  engine_->context()->set_input(code);
 }
 
 ProcessResult PhraseEncoder::ProcessKeyEvent(const KeyEvent& key_event) {
@@ -299,6 +303,15 @@ ProcessResult PhraseEncoder::ProcessKeyEvent(const KeyEvent& key_event) {
     return kAccepted;
   }
   if (ch == XK_Escape) {
+    // Undo pre-commit
+    if (!pending_code_.empty()) {
+      DictEntry old;
+      old.text = pending_phrase_;
+      old.custom_code = pending_code_ + " ";
+      user_dict_->EraseEntry(old);
+      pending_code_.clear();
+      pending_phrase_.clear();
+    }
     active_ = false;
     engine_->context()->set_input("");
     return kAccepted;
