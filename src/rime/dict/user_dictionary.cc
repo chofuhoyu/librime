@@ -468,13 +468,8 @@ bool UserDictionary::UpdateEntry(const DictEntry& entry,
       return ret;
     }
     if (commits > 0 && v.commits == 0) {
-      // new entry: create with static weight (no dynamic frequency)
-      v.commits = 1;
-      v.dee = 0;
-      v.tick = 0;
-      bool ret = db_->Update(key, v.Pack());
-      if (ret && text_userdb_sync_) db_->Sync();
-      return ret;
+      // new entry: don't auto-record in static mode
+      return true;
     }
     // existing entry or zero-commit: skip, no frequency update
     return true;
