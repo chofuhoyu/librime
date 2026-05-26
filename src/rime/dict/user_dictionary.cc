@@ -498,7 +498,9 @@ bool UserDictionary::EraseEntry(const DictEntry& entry) {
   if (code_str.empty() && !TranslateCodeToString(entry.code, &code_str))
     return false;
   string key(code_str + '\t' + entry.text);
-  return db_->Erase(key);
+  bool ret = db_->Erase(key);
+  if (ret && text_userdb_sync_) db_->Sync();
+  return ret;
 }
 
 bool UserDictionary::UpdateTickCount(TickCount increment) {
