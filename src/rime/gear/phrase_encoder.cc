@@ -15,6 +15,7 @@
 #include <rime/dict/reverse_lookup_dictionary.h>
 #include <rime/dict/user_dictionary.h>
 #include <rime/gear/phrase_encoder.h>
+#include <utf8.h>
 
 namespace rime {
 
@@ -146,26 +147,14 @@ bool PhraseEncoder::ApplyFormula(const vector<string>& codes,
   return !result->empty();
 }
 
-// Split a UTF-8 string into individual characters
 static vector<string> SplitToChars(const string& text) {
   vector<string> chars;
   const char* p = text.data();
   const char* end = p + text.size();
   while (p < end) {
-    size_t len = 1;
-    unsigned char c = static_cast<unsigned char>(*p);
-    if (c >= 0xFC)
-      len = 6;
-    else if (c >= 0xF8)
-      len = 5;
-    else if (c >= 0xF0)
-      len = 4;
-    else if (c >= 0xE0)
-      len = 3;
-    else if (c >= 0xC0)
-      len = 2;
-    chars.push_back(string(p, len));
-    p += len;
+    const char* start = p;
+    utf8::unchecked::next(p);
+    chars.emplace_back(start, p - start);
   }
   return chars;
 }
