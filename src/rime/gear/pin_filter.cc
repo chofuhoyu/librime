@@ -27,7 +27,7 @@ class PinFilterTranslation : public CacheTranslation {
         seen_.insert(cand->text());
       }
     }
-    do {
+    while (true) {
       CacheTranslation::Next();
       if (exhausted())
         return false;
@@ -43,9 +43,8 @@ class PinFilterTranslation : public CacheTranslation {
       if (type == "user_table") {
         seen_.insert(cand->text());
       }
-      break;
-    } while (true);
-    return true;
+      return true;
+    }
   }
 
  private:

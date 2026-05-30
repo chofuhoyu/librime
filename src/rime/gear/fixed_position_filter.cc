@@ -29,15 +29,10 @@ class FixedPositionTranslation : public Translation {
       if (phrase && phrase->type() == "custom_phrase" &&
           phrase->entry().commit_count > 0) {
         int pos = phrase->entry().commit_count;
-        bool duplicate = false;
-        for (auto& kv : fixed) {
-          if (kv.first == pos) {
-            duplicate = true;
-            break;
-          }
-        }
-        if (!duplicate)
+        if (!std::any_of(fixed.begin(), fixed.end(),
+                         [pos](const auto& kv) { return kv.first == pos; })) {
           fixed.emplace_back(pos, c);
+        }
       } else if (genuine && genuine->type() == "raw") {
         // echo entries: normally suppressed by EchoTranslation::Compare()
         // when other candidates exist. FixedPositionFilter's eager consumption
