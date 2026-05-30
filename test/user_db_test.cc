@@ -89,3 +89,39 @@ TEST(RimeUserDbTest, Query) {
   }
   db.Close();
 }
+
+TEST(RimeUserDbTest, SyncPersistsToDisk) {
+  TestDb db(path{"user_db_sync_test.txt"}, "user_db_sync_test");
+  if (db.Exists())
+    db.Remove();
+  ASSERT_TRUE(db.Open());
+  // userdb format requires key = "code \t text"
+  EXPECT_TRUE(db.Update("abc \thello", "c=1 d=0.5 t=0"));
+  EXPECT_TRUE(db.Sync());
+
+  // second instance on same file should see the data
+  TestDb db2(path{"user_db_sync_test.txt"}, "user_db_sync_test");
+  ASSERT_TRUE(db2.OpenReadOnly());
+  string value;
+  EXPECT_TRUE(db2.Fetch("abc \thello", &value));
+  EXPECT_EQ("c=1 d=0.5 t=0", value);
+  db2.Close();
+
+  db.Close();
+  db.Remove();
+}
+
+TEST(RimeUserDbTest, NoSyncDoesNotWrite) {
+  TestDb db(path{"user_db_nosync_test.txt"}, "user_db_nosync_test");
+  if (db.Exists())
+    db.Remove();
+  ASSERT_TRUE(db.Open());
+  EXPECT_TRUE(db.Update("abc \thello", "c=1 d=0.5 t=0"));
+  // NO Sync call — file was never created, so OpenReadOnly will fail
+  // verify the file doesn't exist on disk
+  EXPECT_FALSE(db.Exists());
+
+  db.Close();
+  // Close will save since modified_, so clean up
+  db.Remove();
+}
