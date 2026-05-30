@@ -20,10 +20,12 @@ class FixedPositionTranslation : public Translation {
     // Collect and separate in one pass
     vector<pair<int, an<Candidate>>> fixed;  // (position, candidate)
     vector<an<Candidate>> regular;
+    vector<an<Candidate>> raw_entries;  // echo/raw: only shown if nothing else matches
 
     while (!translation->exhausted()) {
       auto c = translation->Peek();
-      auto phrase = As<Phrase>(Candidate::GetGenuineCandidate(c));
+      auto genuine = Candidate::GetGenuineCandidate(c);
+      auto phrase = As<Phrase>(genuine);
       if (phrase && phrase->type() == "custom_phrase" &&
           phrase->entry().commit_count > 0) {
         int pos = phrase->entry().commit_count;
@@ -36,6 +38,11 @@ class FixedPositionTranslation : public Translation {
         }
         if (!duplicate)
           fixed.emplace_back(pos, c);
+      } else if (genuine && genuine->type() == "raw") {
+        // echo entries: normally suppressed by EchoTranslation::Compare()
+        // when other candidates exist. FixedPositionFilter's eager consumption
+        // breaks this, so we explicitly drop them unless there's nothing else.
+        raw_entries.push_back(c);
       } else {
         regular.push_back(c);
       }
@@ -67,6 +74,12 @@ class FixedPositionTranslation : public Translation {
     // Append remaining fixed entries (positions beyond regular count)
     while (fi < fixed.size())
       result_.push_back(fixed[fi++].second);
+
+    // Only show echo/raw entries when nothing else matched
+    if (result_.empty()) {
+      for (auto& c : raw_entries)
+        result_.push_back(c);
+    }
 
     DLOG(INFO) << "fixed_position_filter: " << result_.size()
                << " candidates (fixed=" << fixed.size() << ")";

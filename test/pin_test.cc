@@ -370,3 +370,38 @@ TEST(FixedPositionFilterTest, PositionBeyondRegularCount) {
   result->Next();
   EXPECT_TRUE(result->exhausted());
 }
+
+TEST(FixedPositionFilterTest, RawEchoDroppedWhenOtherCandidatesExist) {
+  // echo_translator produces "raw" type candidates that are normally
+  // suppressed by Compare() when other candidates exist. FixedPositionFilter
+  // must replicate this: drop raw entries unless there's nothing else.
+  auto fifo = New<FifoTranslation>();
+  fifo->Append(MakeCandidate("table", "经互会"));
+  fifo->Append(MakeCandidate("custom_phrase", "emoji", /*position=*/2));
+  fifo->Append(MakeCandidate("raw", "xgwf"));  // echo
+
+  FixedPositionFilter filter(Ticket{});
+  auto result = filter.Apply(fifo, nullptr);
+
+  ASSERT_TRUE(bool(result));
+  // pos 1: 经互会, pos 2: emoji, xgwf dropped
+  EXPECT_EQ(result->Peek()->text(), "经互会");
+  result->Next();
+  EXPECT_EQ(result->Peek()->text(), "emoji");
+  result->Next();
+  EXPECT_TRUE(result->exhausted());
+}
+
+TEST(FixedPositionFilterTest, RawEchoShownWhenNothingElse) {
+  // When there are no other candidates, raw/echo entries should still appear
+  auto fifo = New<FifoTranslation>();
+  fifo->Append(MakeCandidate("raw", "hello"));  // only echo, typing English
+
+  FixedPositionFilter filter(Ticket{});
+  auto result = filter.Apply(fifo, nullptr);
+
+  ASSERT_TRUE(bool(result));
+  EXPECT_EQ(result->Peek()->text(), "hello");
+  result->Next();
+  EXPECT_TRUE(result->exhausted());
+}
