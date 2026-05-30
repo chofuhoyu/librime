@@ -133,6 +133,8 @@ TranslatorOptions::TranslatorOptions(const Ticket& ticket) {
                     &static_user_dict_weights_);
     config->GetBool(ticket.name_space + "/text_userdb_sync",
                     &text_userdb_sync_);
+    config->GetBool(ticket.name_space + "/fixed_position",
+                    &fixed_position_);
 
     preedit_formatter_.Load(
         config->GetList(ticket.name_space + "/preedit_format"));

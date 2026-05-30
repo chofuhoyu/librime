@@ -15,6 +15,7 @@
 #include <rime/gear/echo_translator.h>
 #include <rime/gear/editor.h>
 #include <rime/gear/fallback_segmentor.h>
+#include <rime/gear/fixed_position_filter.h>
 #include <rime/gear/history_translator.h>
 #include <rime/gear/key_binder.h>
 #include <rime/gear/matcher.h>
@@ -83,6 +84,7 @@ static void rime_gears_initialize() {
 
   // filters
   r.Register("pin_filter", new Component<PinFilter>);
+  r.Register("fixed_position_filter", new Component<FixedPositionFilter>);
   r.Register("simplifier", new SimplifierComponent);
   r.Register("uniquifier", new Component<Uniquifier>);
   if (!r.Find("charset_filter")) {  // allow improved implementation

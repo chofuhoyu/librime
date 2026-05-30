@@ -168,6 +168,7 @@ class TranslatorOptions {
   Projection& preedit_formatter() { return preedit_formatter_; }
   Projection& comment_formatter() { return comment_formatter_; }
   bool static_user_dict_weights() const { return static_user_dict_weights_; }
+  bool fixed_position() const { return fixed_position_; }
   const hash_set<string>& blacklist() { return blacklist_; }
 
  protected:
@@ -181,6 +182,7 @@ class TranslatorOptions {
   double sentence_cutoff_threshold_ = 0.1;
   bool static_user_dict_weights_ = false;
   bool text_userdb_sync_ = false;
+  bool fixed_position_ = false;
   Projection preedit_formatter_;
   Projection comment_formatter_;
   Patterns user_dict_disabling_patterns_;

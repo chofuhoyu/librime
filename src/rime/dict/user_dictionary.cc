@@ -596,13 +596,18 @@ an<DictEntry> UserDictionary::CreateDictEntry(const string& key,
   e->text = key.substr(separator_pos + 1);
   e->commit_count = v.commits;
   if (static_weights_) {
-    // pinned entries: dee >= kPinWeight marks pin status, v.tick provides
-    // monotonic ordering (most recent pin = highest weight).
-    // v.tick / 1e6 maps ~21 billion pins into [0, 2100], safe for exp().
-    e->weight = (v.dee >= kPinWeight) ? kPinWeight + (double)v.tick / 1e6 : credibility;
-    if (v.dee >= kPinWeight) {
+    if (fixed_position_ && readonly()) {
+      // position is handled by fixed_position_filter, weight is irrelevant
+      e->weight = credibility;
+    } else if (v.dee >= kPinWeight) {
+      // pinned entries: dee >= kPinWeight marks pin status, v.tick provides
+      // monotonic ordering (most recent pin = highest weight).
+      // v.tick / 1e6 maps ~21 billion pins into [0, 2100], safe for exp().
+      e->weight = kPinWeight + (double)v.tick / 1e6;
       DLOG(INFO) << "pin-v0.1.1 read: key=" << key << " dee=" << v.dee
                 << " tick=" << v.tick << " weight=" << e->weight;
+    } else {
+      e->weight = credibility;
     }
   } else {
     if (v.tick < present_tick)

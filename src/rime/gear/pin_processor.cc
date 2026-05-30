@@ -13,6 +13,7 @@
 #include <rime/schema.h>
 #include <rime/dict/user_dictionary.h>
 #include <rime/dict/vocabulary.h>
+#include <rime/language.h>
 #include <rime/gear/pin_processor.h>
 #include <rime/gear/translator_commons.h>
 
@@ -72,6 +73,15 @@ ProcessResult PinProcessor::ProcessKeyEvent(const KeyEvent& key_event) {
   auto phrase = As<Phrase>(Candidate::GetGenuineCandidate(cand));
   if (!phrase) {
     LOG(INFO) << kPinTag << " candidate is not a phrase";
+    return kNoop;
+  }
+
+  // Skip candidates from other user dictionaries (e.g., custom_phrase stabledb)
+  if (phrase->language() &&
+      phrase->language()->name() != user_dict_->name()) {
+    LOG(INFO) << kPinTag << " skip candidate from '"
+              << phrase->language()->name() << "' (not '"
+              << user_dict_->name() << "')";
     return kNoop;
   }
 

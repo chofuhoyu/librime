@@ -81,7 +81,7 @@ an<Candidate> TableTranslation::Peek() {
   }
   bool incomplete = e->remaining_code_length != 0;
   auto type = incomplete       ? "completion"
-              : is_user_phrase ? "user_table"
+              : is_user_phrase ? (options_ && options_->fixed_position() ? "custom_phrase" : "user_table")
                                : "table";
   auto phrase = New<Phrase>(language_, type, start_, end_, e);
   if (phrase) {
@@ -235,6 +235,7 @@ TableTranslator::TableTranslator(const Ticket& ticket)
   if (user_dict_) {
     user_dict_->set_static_weights(static_user_dict_weights_);
     user_dict_->set_text_userdb_sync(text_userdb_sync_);
+    user_dict_->set_fixed_position(fixed_position_);
   }
 }
 

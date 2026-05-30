@@ -82,6 +82,8 @@ class UserDictionary : public Class<UserDictionary, const Ticket&> {
   bool static_weights() const { return static_weights_; }
   void set_text_userdb_sync(bool value) { text_userdb_sync_ = value; }
   bool text_userdb_sync() const { return text_userdb_sync_; }
+  void set_fixed_position(bool value) { fixed_position_ = value; }
+  bool fixed_position() const { return fixed_position_; }
 
   const string& name() const { return name_; }
   TickCount tick() const { return tick_; }
@@ -113,6 +115,7 @@ class UserDictionary : public Class<UserDictionary, const Ticket&> {
   time_t transaction_time_ = 0;
   bool static_weights_ = false;
   bool text_userdb_sync_ = false;
+  bool fixed_position_ = false;
 };
 
 class UserDictionaryComponent : public UserDictionary::Component {
